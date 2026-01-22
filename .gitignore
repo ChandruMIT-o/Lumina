@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Node
+node_modules/
+dist/
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Backend
+backend/previews/
+backend/uploads/
+# Keep gitkeep if empty dirs exist, but ignore content
+backend/output/
+
+# Frontend
+frontend/dist/
+frontend/.env.local
