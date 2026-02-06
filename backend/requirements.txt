@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-python-multipart
-docxtpl
-docx2pdf
-pdf2image
-pillow
