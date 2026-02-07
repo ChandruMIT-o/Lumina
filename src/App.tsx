@@ -1,7 +1,56 @@
-import { useState, useEffect, useCallback } from "react";
-import LetterGlitch from "./components/LetterGlitch";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import GuidedGlitch from "./components/GuidedGlitch";
+
+const hexToRgb = (hex: string) => {
+	const v = hex.replace("#", "");
+	return {
+		r: parseInt(v.substring(0, 2), 16),
+		g: parseInt(v.substring(2, 4), 16),
+		b: parseInt(v.substring(4, 6), 16),
+	};
+};
+
+const invertHexWithStrength = (hex: string, strength = 0.7) => {
+	const v = hex.replace("#", "");
+	const r = parseInt(v.slice(0, 2), 16);
+	const g = parseInt(v.slice(2, 4), 16);
+	const b = parseInt(v.slice(4, 6), 16);
+
+	const ir = 255 - r;
+	const ig = 255 - g;
+	const ib = 255 - b;
+
+	const mix = (a: number, b: number) => Math.round(a + (b - a) * strength);
+
+	return `#${[mix(r, ir), mix(g, ig), mix(b, ib)]
+		.map((x) => x.toString(16).padStart(2, "0"))
+		.join("")}`;
+};
+
+const rgbToHex = (r: number, g: number, b: number) =>
+	`#${[r, g, b]
+		.map((x) =>
+			Math.max(0, Math.min(255, Math.round(x)))
+				.toString(16)
+				.padStart(2, "0"),
+		)
+		.join("")}`;
+
+const darkenHex = (hex: string, factor = 0.25) => {
+	const { r, g, b } = hexToRgb(hex);
+	return rgbToHex(r * factor, g * factor, b * factor);
+};
 
 function App() {
+	// Load SVGs
+	const svgs = useMemo(() => {
+		const modules = import.meta.glob("./assets/svg_bg/*.svg", {
+			as: "raw",
+			eager: true,
+		});
+		return Object.values(modules) as string[];
+	}, []);
+
 	const charList = [
 		"☰☱☲☳☴☵☶☷",
 		"▤▥▦▧▨▩",
@@ -21,6 +70,7 @@ function App() {
 		"┌┐└┘├┤┬┴┼─",
 		"╓╔╕╖╗╘╙╚╛╜╝",
 		"⋐⋑⋒⋓",
+		"abcdefghijklmnopqrstuvwxyz",
 	];
 
 	const colorPairs = [
@@ -44,16 +94,31 @@ function App() {
 		["#ff5252", "#ff1744", "#d50000"], // Crimson Flash
 	];
 
+	const [backgroundColors, setBackgroundColors] = useState<string[]>([]);
+
 	const [glitchColors, setGlitchColors] = useState(colorPairs[0]);
 	const [glitchChars, setGlitchChars] = useState(charList[0]);
+
+	const INVERT_STRENGTH = 1;
+	const DARKNESS_STRENGTH = 1;
 
 	const changeBackground = useCallback(() => {
 		const randomColors =
 			colorPairs[Math.floor(Math.random() * colorPairs.length)];
 		const randomChars =
 			charList[Math.floor(Math.random() * charList.length)];
+
 		setGlitchColors(randomColors);
 		setGlitchChars(randomChars);
+
+		const backgroundVariants = randomColors.map((c) =>
+			darkenHex(
+				invertHexWithStrength(c, INVERT_STRENGTH),
+				DARKNESS_STRENGTH,
+			),
+		);
+
+		setBackgroundColors(backgroundVariants);
 	}, [colorPairs, charList]);
 
 	useEffect(() => {
@@ -78,13 +143,21 @@ function App() {
 			onClick={handleBackgroundClick}
 			className="min-h-screen text-slate-200 flex flex-col font-sans relative overflow-hidden cursor-crosshair bg-[#050505]"
 		>
-			<div className="fixed inset-0 z-0 opacity-80">
-				<LetterGlitch
-					glitchSpeed={100}
+			<div className="fixed inset-0 z-0 opacity-100">
+				<GuidedGlitch
+					speed={60}
+					morphSpeed={0.004}
 					glitchColors={glitchColors}
+					backgroundColors={backgroundColors}
 					characters={glitchChars}
 					outerVignette={true}
+					svgs={svgs}
+					fontSize={16}
 				/>
+			</div>
+			{/* Optional Interaction Hint */}
+			<div className="pointer-events-none absolute bottom-8 w-full text-center text-[10px] tracking-[0.5em] text-white/20 uppercase">
+				Neural Link Active // Click to Signal
 			</div>
 		</div>
 	);
