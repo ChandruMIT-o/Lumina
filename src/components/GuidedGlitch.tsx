@@ -1,78 +1,7 @@
-import React, {
-	useRef,
-	useEffect,
-	useMemo,
-	useCallback,
-	useState,
-} from "react";
+import React, { useRef, useEffect, useMemo, useCallback } from "react";
 
 // --- Geometry & Morphing Logic ---
-const TOTAL_POINTS = 200; // Increased for better detail on complex SVGs
-
-// Helper to create polygon points
-const createPoints = (fn: (i: number) => { x: number; y: number }) => {
-	return Array.from({ length: TOTAL_POINTS }, (_, i) => fn(i));
-};
-
-// Default Shape Generators (Normalized 0-100 coordinate space)
-const DEFAULT_SHAPES = [
-	// 1. Circle
-	createPoints((i) => {
-		const angle = (i / TOTAL_POINTS) * Math.PI * 2;
-		return {
-			x: 50 + 35 * Math.cos(angle),
-			y: 50 + 35 * Math.sin(angle),
-		};
-	}),
-	// 2. Star
-	createPoints((i) => {
-		const angle = (i / TOTAL_POINTS) * Math.PI * 2 * 5; // 5 points
-		const radius = i % 2 === 0 ? 40 : 15; // Alternating radii
-
-		const starAngle = (i / TOTAL_POINTS) * Math.PI * 2;
-		const r = 25 + 15 * Math.cos(starAngle * 5);
-		return {
-			x: 50 + r * Math.cos(starAngle),
-			y: 50 + r * Math.sin(starAngle),
-		};
-	}),
-	// 3. Square
-	createPoints((i) => {
-		// Map index 0-TOTAL to perimeter of square
-		const progress = i / TOTAL_POINTS;
-		const size = 70;
-		const half = size / 2;
-		let x, y;
-		if (progress < 0.25) {
-			// Top
-			x = (progress / 0.25) * size - half;
-			y = -half;
-		} else if (progress < 0.5) {
-			// Right
-			x = half;
-			y = ((progress - 0.25) / 0.25) * size - half;
-		} else if (progress < 0.75) {
-			// Bottom
-			x = half - ((progress - 0.5) / 0.25) * size;
-			y = half;
-		} else {
-			// Left
-			x = -half;
-			y = half - ((progress - 0.75) / 0.25) * size;
-		}
-		return { x: 50 + x, y: 50 + y };
-	}),
-	// 4. Diamond
-	createPoints((i) => {
-		const angle = (i / TOTAL_POINTS) * Math.PI * 2;
-		// Superellipse-ish for sharp diamond
-		const r = 40 / (Math.abs(Math.sin(angle)) + Math.abs(Math.cos(angle)));
-		return {
-			x: 50 + r * Math.cos(angle),
-			y: 50 + r * Math.sin(angle),
-		};
-	}),
-];
+const TOTAL_POINTS = 800; // Increased for better detail on complex SVGs
 
 interface GuidedGlitchProps {
 	glitchColors: string[]; // Active Palette (Inside Shape)
@@ -111,7 +40,7 @@ const GuidedGlitch: React.FC<GuidedGlitchProps> = ({
 	});
 
 	// Store shapes in a ref so we can update them when svgs prop changes
-	const shapesRef = useRef<{ x: number; y: number }[][]>(DEFAULT_SHAPES);
+	const shapesRef = useRef<{ x: number; y: number }[][]>([]);
 
 	const grid = useRef({ columns: 0, rows: 0 });
 	const letters = useRef<
@@ -271,9 +200,6 @@ const GuidedGlitch: React.FC<GuidedGlitchProps> = ({
 					progress: 0,
 				};
 			}
-		} else {
-			// Fallback to default shapes if no SVGs provided
-			// shapesRef.current = DEFAULT_SHAPES;
 		}
 	}, [svgs]);
 
